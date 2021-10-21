@@ -1,4 +1,5 @@
-<ul data-bind="foreach:servers">
+<html>
+    <ul data-bind="foreach:servers">
     <li> <a href="#" data-bind="text:name,attr:{href: 'http://'+name}">tester</a> <span data-bind="text:status,css:status"></span>
 
     </li>
@@ -74,3 +75,4 @@ ko.applyBindings(komodel);
     color:red;
 }
 </style>
+</html>
