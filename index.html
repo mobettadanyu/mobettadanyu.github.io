@@ -1,0 +1,616 @@
+
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">			
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<title>i hate you</title>
+<meta name="google" content="notranslate">
+<meta name="description" content="KML, KMZ Viewer is a tool that views the .kml, .kmz file in your browser. Free online tool to view KML, KMZ files from the web on a Google map. You can open KML, KMZ files from URL, Google Drive or from your computer.">
+<meta name="keywords" content="kml viewer, online kml viewer, kml reader, online kml reader, kmz viewer, kmz reader, kml viewer for google drive, kml on a map">
+
+<style>
+body,table,td {
+	font-size:14px;
+    font-family: Arial, Helvetica, sans-serif; /*Trebuchet MS, Tahoma, Verdana*/
+}
+html, body{
+	margin:0;
+	width:100%;
+	height:100%;
+	/*overflow-y:hidden;*/
+}
+A:link    {color:#0000ff;text-decoration:none;}
+A:visited {color:#0000ff;text-decoration:none;}
+A:active  {color:#0000ff;text-decoration:underline;}
+A:hover  {color:#0000ff;text-decoration:underline;}
+</style>
+
+<script src="https://urlare.glitch.me/js/common.js" type="text/javascript"></script>
+  
+<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyA4yseqrXvl_gq4ZmRhiT3rs_cjcYU5g7I&v=3"></script>
+
+<style type="text/css">
+v\:* {
+	behavior:url(#default#VML);
+}
+</style>
+
+<script type="text/javascript"> 
+var gadb=false;
+function proc_resize(){
+function getWindowWidth(){
+    var windowWidth = 0;
+    if (typeof(window.innerWidth) == 'number'){
+        windowWidth = window.innerWidth;
+    }else{
+        var ieStrict = document.documentElement.clientWidth;
+        var ieQuirks = document.body.clientWidth; 
+        windowWidth = (ieStrict > 0) ? ieStrict : ieQuirks;
+    }
+	if(!windowWidth) windowWidth=0;
+    return windowWidth;
+}
+function getWindowHeight(){
+    var windowHeight = 0;
+    if (typeof(window.innerHeight) == 'number'){
+        windowHeight = window.innerHeight;
+    }else{
+        var ieStrict = document.documentElement.clientHeight; 
+        var ieQuirks = document.body.clientHeight;
+        windowHeight = (ieStrict > 0) ? ieStrict : ieQuirks;
+    }
+	if(!windowHeight) windowHeight=0;
+    return windowHeight;
+}
+	var a=_getid("desc");
+	var b=_getid("viewer");
+	var c=_getid("sidebar");
+	var d=_getid("map");
+
+	var h=getWindowHeight()-a.offsetHeight-15;
+	if(h<760) h=760;
+	d.style.height=h+"px";
+	c.style.height=h+"px";
+
+	var w1=getWindowWidth()-30;
+	if(w1<1100) w1=1100;
+	if(w1>1650) w1=1650;
+	w=w1-c.offsetWidth;
+	d.style.width=w+"px";
+}
+function getFileName(url) {
+  url = url.substring(0, (url.indexOf("#") == -1) ? url.length : url.indexOf("#"));
+  url = url.substring(0, (url.indexOf("?") == -1) ? url.length : url.indexOf("?"));
+  url = url.substring(url.lastIndexOf("/") + 1, url.length);
+  return url;
+}
+function proc_sample(s){
+	//s='http://kmlviewer.nsspot.net/sample/'+getFileName(s);
+	s='https://iblogbox.github.io/js/gpx/sample/'+getFileName(s);
+  console.log(s);
+	addGeoXML(s);
+}
+
+function getfileext(s){
+	if(!s) s='';var arr=s.split('.');if(arr.length>1){return arr[arr.length-1].toLowerCase();}return '';
+}
+function g(issave,name){
+  var data={};
+  try{    
+    try{
+      data=JSON.parse(getstorage(name));
+    }catch(err){
+      data={};
+    }
+    if(!data) data={};
+    var now=new Date();
+    var time=now.getFullYear()+'-'+(now.getMonth()+1)+'-'+now.getDate();
+    if(data.time!=time){
+      data.time=time;
+      data.count=1;
+    }else{      
+      if(!data.count)data.count=1;    
+      data.count=data.count+1;
+    }
+    if(issave) setstorage(name, JSON.stringify(data));	
+  }catch(err){}
+  return data;
+}
+
+var map;
+var userAdded = 1;
+var layers = {};
+var timeropen;
+
+function onLoad() {
+	map = new google.maps.Map(document.getElementById('map'), {
+		zoom: 5,
+		center: {lat: 37.422341, lng: -122.085018},
+		gestureHandling: 'greedy'
+	});
+	//document.getElementById("url").value = "http://";
+  
+	for(var layer in layers) {
+		addTR(layer, layers[layer].name);
+	}
+	//document.getElementById(layer).checked = true;
+	//toggleGeoXML(layer, true);
+
+	proc_resize();
+	if (window.addEventListener) window.addEventListener("resize", proc_resize, false);
+	else if (window.attachEvent) window.attachEvent("onresize", proc_resize);
+} 
+
+var g_upload;
+function addGeoXML(url,filename,nolink,resp) {
+	if(false){alert('Please disable the adblock for free use.');return;}
+	if(resp && resp.fileSize && resp.md5Checksum && filename && window.g_upload){
+		//var ext=getfileext(filename);
+		//if(ext=='kml' && resp.fileSize>2.8*1024*1024){
+			var file={};
+			file.name=filename;
+			file.size=resp.fileSize;
+			file.url=url;
+			file.checksum=resp.md5Checksum;
+			g_upload(file);
+			return;
+		//}
+	}
+
+	if(!map){
+		clearInterval(timeropen);
+		timeropen=setInterval(function(){
+			if(map){
+				clearInterval(timeropen);
+				addGeoXML(url,filename,nolink,resp);
+			}
+		}, 200);       
+		return;
+	}
+
+	/*var udata=g(false,'iwcount2');			
+	if(udata.count>48){alert('You have exceeded the daily usage for file uploading. Please try again later.');return;} 
+	setstorage('iwcount2', JSON.stringify(udata));*/
+
+	var theUrl = trim(document.getElementById("url").value || '');
+	if(url) theUrl=url;
+
+	theUrl=trim(theUrl);
+	theUrl = theUrl.replace(/^\s+/, "");
+	theUrl = theUrl.replace(/\s+$/, "");
+	if(!filename) filename=getFileName(theUrl);
+
+	var id = "userAdded" + userAdded;
+    layers[id] = {};
+    layers[id].url = theUrl;
+    layers[id].name = "User Layer " + userAdded;
+	if(filename){
+		layers[id].name=filename;
+		layers[id].filename=filename;
+	}
+
+    addTR(id,nolink);
+    document.getElementById(id).checked = true;
+    toggleGeoXML(id, true);
+    userAdded++;
+}
+
+function addTR(id,nolink) {
+  var layerTR = document.createElement("tr");
+
+  var inputTD = document.createElement("td");
+  var input = document.createElement("input");
+  input.type = "checkbox";
+  input.id = id;
+  input.onclick = function(){ toggleGeoXML(this.id, this.checked) };
+  inputTD.appendChild(input);
+
+  var nameTD = document.createElement("td");
+  
+  var name = document.createTextNode(layers[id].name);
+  if(!nolink){
+	var nameA = document.createElement("a");  
+	nameA.href = layers[id].url;
+	nameA.title="Download";
+	nameA.target="_blank";
+	if(layers[id].filename) nameA.download=layers[id].filename;  
+	nameA.appendChild(name);
+	nameTD.appendChild(nameA);
+  }else{
+	nameTD.appendChild(name);
+  }
+
+  layerTR.appendChild(inputTD);
+  layerTR.appendChild(nameTD);
+  document.getElementById("sidebarTBODY").appendChild(layerTR);
+}
+
+var timercenter, timercount;
+function toggleGeoXML(id, checked) {
+  if(checked){
+	show_message('Loading...',10,20,'',4000);	
+
+	if(layers[id].zoom){
+		map.setZoom(layers[id].zoom);
+    }else{
+		map.setZoom(1);
+    }
+	if (layers[id].lat && layers[id].lng){
+		map.setCenter(new google.maps.LatLng(layers[id].lat, layers[id].lng));
+    }else{
+		map.setCenter(new google.maps.LatLng(39.909736,-35.859375));
+    }
+
+	var geoXml = new google.maps.KmlLayer({
+		url: layers[id].url,
+		//suppressInfoWindows: true, preserveViewport: false,
+		map: map
+	});		  
+    layers[id].geoXml = geoXml;	
+
+	clearInterval(timercenter);
+	timercount=0;
+	var filename=layers[id].filename;
+	timercenter=setInterval(function(){
+		var ret='';
+		var msg='';
+		try{
+			ret=geoXml.getStatus();
+		}catch(err){}
+		//console.log(ret);
+		timercount++;
+		if(ret==google.maps.KmlLayerStatus.OK){
+			hide_message();
+			clearInterval(timercenter);
+			return;
+		}else if(ret==google.maps.KmlLayerStatus.DOCUMENT_NOT_FOUND){
+			msg='The file could not be found. Most likely it is an invalid URL, or the file is not publicly available.';
+		}else if(ret==google.maps.KmlLayerStatus.DOCUMENT_TOO_LARGE){
+			msg='The file exceeds the file size limits.';
+		}else if(ret==google.maps.KmlLayerStatus.FETCH_ERROR){
+			msg='The file could not be fetched.';
+		}else if(ret==google.maps.KmlLayerStatus.INVALID_DOCUMENT){
+			msg='The file is not a valid KML, KMZ or GeoRSS document.';
+		}else if(ret==google.maps.KmlLayerStatus.INVALID_REQUEST){
+			msg='The KmlLayer is invalid.';
+		}else if(ret==google.maps.KmlLayerStatus.LIMITS_EXCEEDED){
+			msg='The file exceeds the feature limits of Kml Layer.';
+		}else if(ret==google.maps.KmlLayerStatus.TIMED_OUT){
+			msg='The file could not be loaded within a reasonable amount of time.';
+		}else if(ret==google.maps.KmlLayerStatus.UNKNOWN){
+			msg='The file failed to load for an unknown reason.';		
+		}
+		if((msg && timercount>6) || (timercount>30)){
+			clearInterval(timercenter);
+			var s='<font style="font-size:16px">Error. Please check the file is valid, or Max 10M (based on unzipped KML) file size limit.';
+			if(msg) s+='<br><font color="#8A0808">'+html_entity_encode(msg)+'</font>';
+			if(filename) s+='<br>('+html_entity_encode(filename)+')';
+			s+='</font>';
+			show_message(s,10,20,'',8000);
+		}
+	},500);
+
+  }else if (layers[id].geoXml){
+	  layers[id].geoXml.setMap(null);
+  }
+}
+
+function proc_clear(){
+	for(var layer in layers) {
+		if(layers[layer]){
+			if(layers[layer].geoXml){
+				layers[layer].geoXml.setMap(null);
+			}
+		}
+	}
+	layers={};
+	_getid("sidebar").innerHTML='<table id="sidebarTABLE"><tbody id="sidebarTBODY"></tbody></table>';
+}
+
+  
+  
+  
+  
+  
+</script>
+
+</head>
+<body bgcolor="" onload="">
+
+<style>
+.gd_div{background-color:#FFFFE1;position:absolute;overflow:hidden;-webkit-box-shadow: 0 0 25px #999;-moz-box-shadow: 0 0 25px #999;box-shadow: 0 0 25px #999;}
+</style>
+<div id="layer_message" class="gd_div" style="z-index:10001;display:none;"></div>
+
+<table id="desc" style="margin-top:5px;" border=0>
+<tr><td>
+
+
+<script>
+function trim(str) {
+  	return str.replace(/^\s*|\s*$/g,"");
+}
+function setstorage(name,value){
+	if (window.localStorage){
+		localStorage[name]=value+'';
+	}else{
+		//setCookie(name, value, 1000*60*60*24*365*10); 
+	}
+}
+function getstorage(name){
+	var s;
+	if (window.localStorage){
+		s=localStorage[name];
+	}else{
+		//s=getCookie(name);
+	}
+	return s;
+}
+function validateURL(textval) {
+	var regexp = /^(?:(ftp|http|https):\/\/)?(?:[\w-]+\.)+([a-z]{2,6}|[0-9]{1,6})/i;	
+	return regexp.test(textval);
+}
+function proc_submit(f){
+	var s=trim(f.url.value);
+	if(!s){
+		alert('Please enter a URL.');
+		f.url.focus();
+		return;
+	}
+	if(!validateURL(s)){
+		alert("It is not a valid URL.");
+		f.url.focus();
+		return;
+	}
+	setTimeout(function(){			
+		addGeoXML();
+	},10);
+	//if(parent && parent.proc_openviewer) parent.proc_openviewer(f.url.value);
+}
+ 
+  
+  
+</script>
+
+<form onsubmit="proc_submit(this);return false;" style="display:inline">
+<table cellpadding=0 cellspacing=0><tr>
+<td>Enter a KML, KMZ URL below to view it. 
+&nbsp;<a href="#" onclick="proc_sample('Blackbirds.kmz');return false;" title="Blackbirds">Sample 1</a> 
+&nbsp;<a href="#" onclick="proc_sample('Tour_de_France.kmz');return false;" title="Tour de France">Sample 2</a> 
+&nbsp;<a href="#" onclick="proc_sample('Civil_War_by_Campaign.kmz');return false;" title="Civil War by Campaign.kmz">Sample 3</a>
+&nbsp;<a href="#" onclick="proc_sample('cornishlight.kml');return false;" title="Cornwall by Cornishlight">Sample 4</a> 
+<td>
+<table cellpadding=0 cellspacing=0><tr><td><div id="ufile1" style="margin-left:10px;"></div><td><div id="umsg1" style="margin-left:5px;"></div></table>
+</table>
+
+<input type=text name=url id=url style="width:500px;font-size:15px" value="test"><input type=submit value="View on the map!" style="font-size:15px">
+<button type="button" onclick="proc_clear()" style="font-size:15px">Clear All</button>
+</form>
+
+<script>
+document.getElementById("ufile1").innerHTML='<input type="file" id="ufileload1" name="files[]" style="width:150px">';
+var u_uploading;
+function u_init(){
+	var uid='kmlviewer-';
+	var maxsize=15;
+	var sextension='kml,kmz,gpx';
+function _getid(id){return document.getElementById(id);}
+function getfileext(s){
+	if(!s) s='';var arr=s.split('.');if(arr.length>1){return arr[arr.length-1].toLowerCase();}return '';
+}
+function handleFileSelect(files){
+	if(!window.XMLHttpRequest){
+		alert("This browser does not support.");
+		return;
+	}
+	if(!files || files.length==0) return;
+	for(var i = 0, f; f = files[i]; i++){
+		upload(files[i]);
+		break;
+	}
+}
+  var gadb=false;
+function upload(file){	
+	if(gadb){alert('Please disable the adblock for free use.');return;}
+	function callback(a){
+		if(a.error && a.error[0]){
+			alert(a.error[0]);
+		}else if(a.tempname){
+			addGeoXML(a.tempname, file.name, true);
+      console.log(a.tempname, file.name)
+		}else{
+			alert('Unknown Error.');
+		}
+	}
+	function end(){
+		u_uploading=false;
+		_getid("umsg1").innerHTML='';
+	}
+	if(file.size==0){alert('File size is zero. or File not found.');return;}
+	if(file.size>maxsize*1024*1024){
+		alert('The file size is too large to upload. ('+maxsize+' MB limit)');return;
+	}
+	var ext=getfileext(file.name);
+	if((","+sextension+",").indexOf(","+ext+",")<0){
+		alert('Not supported file type ('+ext+').');return;
+	}	
+	if(u_uploading){
+		alert("It's uploading. Please try again later. or Cancel the current job.");return;
+	}
+	var udata=g(false,'iwcount');			
+	if(udata.count>28){alert('You have exceeded the daily usage for file uploading. Please try again later.');return;} 
+	setstorage('iwcount', JSON.stringify(udata));
+	u_uploading=true;
+	_getid("umsg1").innerHTML="<table><tr><td><div id='u_progress'>Uploading...</div><td>&nbsp; <a href='#' id='u_cancel' style='font-size:15px;display:none'>Cancel</a></table>";
+	try{
+		var xhr = new XMLHttpRequest();
+		var canceled;
+		var c=_getid('u_cancel');
+		if(c){
+			c.style.display='';
+			c.onclick=function(){
+				canceled=true;
+				xhr.abort(); 							
+				end();
+				return false;
+			}
+		}
+		var u_lastprogress=(new Date()).getTime();
+		var fd = new FormData();  
+		fd.append('uid', uid);
+		fd.append('title', file.name);		
+		if(file.url){
+			fd.append('imgurl', file.url);
+			fd.append('checksum', file.checksum || '');			
+		}else{
+			fd.append('file1', file);
+		}
+		fd.append('usespecdir', 'ok');
+		fd.append('nocheckext', 'ok');			
+		xhr.upload.onprogress = function(e) {
+			if(u_lastprogress){
+				var elaspetime = new Date();
+				var dt=(elaspetime.getTime()-u_lastprogress);
+				if(dt<300)return;
+				u_lastprogress=elaspetime.getTime();
+			}
+			if(!e.lengthComputable)return;
+			var percentComplete = (e.loaded / e.total) * 100;
+			percentComplete=Math.floor(percentComplete);
+			if(percentComplete>=100) percentComplete=100;
+			var c=_getid('u_progress');
+			if(c) c.innerHTML=percentComplete+"% Done.";
+		}
+				xhr.open('POST', 'https://excelviewer.herokuapp.com/upload/', true); 		
+		xhr.onload=function() {
+			if(canceled)return;
+			end();
+			if(this.status == 200){
+				var a={};
+				try{a=JSON.parse(this.response);}catch(err){a={};}
+				callback(a);
+			}else{
+				alert("Error (status) " + this.status + "("+this.statusText+") occurred while uploading the file.");
+			}			
+		}
+		xhr.onerror=function(e){
+			if(canceled)return;
+			end();
+			alert("Error " + e.target.status + " occurred while uploading the file.");			
+		}
+		xhr.send(fd);	
+  }catch(err){
+	end();
+	alert(err+'\n\nor This browser does not support. Please upgrade your browser.');
+  }
+}
+
+	_getid('ufileload1').onchange=function(e){
+		if(!e || !e.target){
+			alert("This browser does not support.");
+			return;
+		}
+		handleFileSelect(e.target.files);
+	}
+	var arr=sextension.split(',');var s='';
+	for(var i = 0; i < arr.length; i++){
+		if(s) s+=', ';
+		s+="."+arr[i];
+	}
+	var a=_getid('ufileload1');
+	a.setAttribute("accept",s);
+	a.title="Select a file. ("+s+")";
+	var holder = document;
+	holder.ondragover = function (e) { 
+		try{var ua=navigator.userAgent;
+			if(ua && ua.indexOf("Chrome")>=0){					
+				if(e.originalEvent) e = e.originalEvent;
+				if(e.dataTransfer){
+					var b = e.dataTransfer.effectAllowed;
+					e.dataTransfer.dropEffect = ('move' === b || 'linkMove' === b) ? 'move' : 'copy';
+				}
+			}
+		}catch(err){}
+		return false; 
+	};
+	holder.ondragend = function () { return false; };
+	holder.ondrop = function (e) {
+		e.preventDefault();				
+		handleFileSelect(e.dataTransfer.files);
+		return false;
+	};
+	g_upload=function(file){
+		upload(file);
+	}
+}
+u_init();
+</script>			
+
+</table>
+
+<table id="viewer" style="height:500px" cellpadding=0 cellspacing=0><tr>
+<td>
+	<div id="map" style="width: 500px; height: 100%; border: 0px solid black;"></div>
+<td width=2>
+<td>
+    <div id="sidebar" style="overflow-vertical:scroll; height: 100%; width:250px; border:1px dashed black">    
+	<table id="sidebarTABLE">
+	    <tbody id="sidebarTBODY">
+	    </tbody>
+    </table>
+    </div>
+</table>
+
+
+
+<script>
+function isviewer(){
+	return true;
+}
+//if(self===top){
+//	top.location='./';
+//}
+var timer1=setInterval(function(){
+	if(typeof google !== 'undefined' && google.maps){
+		clearInterval(timer1);
+		onLoad();
+	}
+},200);
+</script>
+<script src="https://storage.googleapis.com/app0126/js/compat2.js"></script>
+<script>init_compat201912_a();</script>
+
+  <script>
+  
+     
+  //start of my fucking code
+   var cock=document.getElementById("url");
+  console.log(cock)
+ var gofuckyourself=["Misc%20RR%27s%20in%20Il.kmz","Lost%20and%20Forgotten%20Drag%20Strips.kmz","Asbestos%20Addicts%20Anonymous%20Map.kmz","AIO%20MAP%20iamex0dia.kmz","1.kmz","2.kmz","3.kmz","4.kmz","5.kmz","6.kmz","7.kmz","8.kmz","9.kmz","10.kmz","United%20States.kmz"];
+      function FUC(s){
+	//s='http://kmlviewer.nsspot.net/sample/'+getFileName(s);
+	s='https://cdn.glitch.global/60b70be2-e3a4-4be7-a1bc-0b7280c32906/'+getFileName(s);
+    console.log(s)
+	addGeoXML(s);
+}
+    var check=0;
+    while(check!==gofuckyourself.length){
+      eval("setTimeout(function(){FUC(gofuckyourself["+check+"]);},"+check+"0000)");
+      check=check+1;
+      console.log(check);
+      console.log(gofuckyourself[check])
+    }
+    
+    
+  cock.value="";
+  
+  
+  
+  
+  </script>
+  
+ <!-- <script src="extra.js" type="text/javascript"></script>-->
+  
+  
+</body>
+</html>

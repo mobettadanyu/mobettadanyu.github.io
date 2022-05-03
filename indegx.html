@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta name="viewport" content="initial-scale=1.0, user-scalable=no">
+  <meta charset="utf-8">
+  <title>Reyner KMZ Labs</title>
+  <style>
+    html, body, #map {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      padding: 0;
+      margin: 0;
+    }
+
+    #input-area {
+      position: absolute;
+      z-index: 1;
+      margin: 10px;
+      left: 200px;
+      width: 50%;
+    }
+
+    #input-area input {
+      border: 1px solid lightgray;
+      padding: 8px;
+      font-size: 18px;
+      width: 70%;
+    }
+
+    #input-area button {
+      border: 1px solid lightgray;
+      padding: 8px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 18px;
+    }
+  </style>
+</head>
+<body>
+<div id="map"></div>
+<div id="input-area">
+  <input type="text" id="kml-input" placeholder="Ingrese una URL de KML/KMZ"/>
+  <button onclick="onLoadClick(event)">Cargar KML/KMZ</button>
+</div>
+
+
+<script>
+  let map = null;
+  let kmlLayer = null;
+  const kmlInput = document.getElementById('kml-input');
+
+  function onLoadClick($event) {
+    if (kmlLayer) {
+      kmlLayer.setMap(null);
+    }
+    kmlLayer = new google.maps.KmlLayer(kmlInput.value, {suppressInfoWindows: true, preserveViewport: false, map});
+  }
+
+  function initMap() {
+    map = new google.maps.Map(document.getElementById('map'), {
+      center: new google.maps.LatLng(9.9499501, -84.0695952),
+      zoom: 8
+    });
+  }
+  
+  window.addEventListener("error", handleError, true);
+
+function handleError(evt) {
+    if (evt.message) { // Chrome sometimes provides this
+      alert("error: "+evt.message +" at linenumber: "+evt.lineno+" of file: "+evt.filename);
+    } else {
+      alert("error: "+evt.type+" from element: "+(evt.srcElement || evt.target));
+    }
+}
+</script>
+<script async defer
+        src="https://maps.googleapis.com/maps/api/js?key=AIzaSyA4yseqrXvl_gq4ZmRhiT3rs_cjcYU5g7I&callback=initMap">
+</script>
+</body>
+</html>
+
+<!--
+<script src="//maps.googleapis.com/maps/api/js?key=AIzaSyDLo2VJoAc7X8qSiiWjjTCHPTTvPyacKcI
+-->
