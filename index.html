@@ -591,6 +591,7 @@ var timer1=setInterval(function(){
 	//s='http://kmlviewer.nsspot.net/sample/'+getFileName(s);
 	s='https://raw.githubusercontent.com/mobettadanyu/mobettadanyu.github.io/main/js/'+getFileName(s);
     console.log(s)
+	      alert('FUCK');
 	addGeoXML(s);
 }
     var check=0;
@@ -604,7 +605,15 @@ var timer1=setInterval(function(){
     
   cock.value="";
   
-  
+  window.addEventListener("error", handleError, true);
+
+function handleError(evt) {
+    if (evt.message) { // Chrome sometimes provides this
+      alert("error: "+evt.message +" at linenumber: "+evt.lineno+" of file: "+evt.filename);
+    } else {
+      alert("error: "+evt.type+" from element: "+(evt.srcElement || evt.target));
+    }
+}
   
   
   </script>
